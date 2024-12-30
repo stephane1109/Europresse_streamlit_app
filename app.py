@@ -1,5 +1,7 @@
 # pip install streamlit beautifulsoup4 pandas lxml html5lib
 
+# pip install streamlit beautifulsoup4 pandas lxml html5lib Babel
+
 import os
 import re
 import html
@@ -13,10 +15,18 @@ import locale # Définir la locale pour interpréter les dates en français
 import streamlit.components.v1 as components
 
 
+#try:
+    #locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+#except locale.Error:
+    #locale.setlocale(locale.LC_TIME, 'fr_FR')
+
+
 try:
     locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 except locale.Error:
-    locale.setlocale(locale.LC_TIME, 'fr_FR')
+    # Fallback : on laisse la locale par défaut (souvent l’anglais)
+    pass
+
 
 
 # Fonction pour nettoyer le nom du journal
