@@ -1,0 +1,7 @@
+# install requierements.txt
+
+streamlit
+beautifulsoup4
+pandas
+lxml
+html5lib
