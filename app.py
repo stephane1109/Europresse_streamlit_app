@@ -26,18 +26,6 @@ def nettoyer_nom_journal(nom_journal):
     nom_journal_nettoye = f"*source_{nom_journal_sans_numero}"
     return nom_journal_nettoye
 
-# Fonction pour extraire le texte du fichier HTML
-import re
-import html
-from datetime import datetime
-from bs4 import BeautifulSoup
-import locale
-
-try:
-    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-except locale.Error:
-    locale.setlocale(locale.LC_TIME, 'fr_FR')
-
 def extraire_texte_html(
         contenu_html,
         variable_suppl_texte,
@@ -376,8 +364,3 @@ def afficher_interface_europresse():
 
 if __name__ == "__main__":
     afficher_interface_europresse()
-
-
-
-
-
