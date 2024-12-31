@@ -1,3 +1,14 @@
+# -----------------------------------------
+# Projet : Europresse to IRaMuTeQ - Appli streamlit
+# Auteur : Stéphane Meurisse
+# Contact : stephane.meurisse@gmail.com
+# Site Web : https://www.codeandcortex.fr
+# LinkedIn : https://www.linkedin.com/in/st%C3%A9phane-meurisse-27339055/
+# Date : 31 Décembre 2024
+# Version : 3.0
+# Licence : Ce programme est un logiciel libre : vous pouvez le redistribuer selon les termes de la Licence Publique Générale GNU v3
+# -----------------------------------------
+
 # pip install streamlit beautifulsoup4 pandas lxml html5lib
 
 import os
@@ -9,10 +20,11 @@ import streamlit as st
 from io import StringIO, BytesIO
 import zipfile
 import streamlit.components.v1 as components
+from datetime import datetime
 
 
 # -----------------------------------------
-    # 1) DICTIONNAIRE POUR LES DATES 
+# 1) DICTIONNAIRE POUR LES DATES
 # -----------------------------------------
 
 # 1) Dictionnaire
@@ -25,18 +37,14 @@ mois_fr_en = {
 
 # 2) Fonction paser la date
 def parser_date(raw_date_str):
-    """
-    Transforme "11 septembre 2024" en un objet datetime
-    (ex. datetime(2024, 9, 11)), en remplaçant le mois français si besoin.
-    """
-    import re
-    from datetime import datetime
+    # Transforme "31 decembre 2024" en un objet datetime
+    # (ex. datetime(2024, 12, 31)), en remplaçant le mois français.
 
     # On parcourt les clés FR du dict pour détecter le mois dans "raw_date_str"
     for fr, en in mois_fr_en.items():
         # On vérifie en minuscules pour éviter les soucis de casse
         if fr in raw_date_str.lower():
-            # Remplace "septembre" par "September" (ex.)
+            # Remplace "septembre" par "September"
             raw_date_str = re.sub(fr, en, raw_date_str, flags=re.IGNORECASE)
             break  # on arrête après la première correspondance
 
@@ -63,7 +71,8 @@ def extraire_texte_html(
         date_annee_mois_jour_checked,
         date_annee_mois_checked,
         date_annee_checked,
-        methode_extraction
+        methode_extraction,
+        supprimer_balises=False  # par défaut False because expérimental
     ):
 
     soup = BeautifulSoup(contenu_html, 'html.parser')
@@ -87,9 +96,7 @@ def extraire_texte_html(
                 if content_list:
                     # Exemple : "La Croix, no. 43018"
                     nom_journal = content_list[0]
-            # On supprime immédiatement cette div du DOM
-            # pour qu'elle ne se retrouve pas plus tard dans get_text()
-            # div_journal.decompose()
+
 
         # --------------------------------------------------------------------
         # b) Extraction du texte brut (avant suppression plus fine)
@@ -178,6 +185,22 @@ def extraire_texte_html(
         # --------------------------------------------------------------------
         # 6) NETTOYAGE DU DOM (aside, footer, etc.) AVANT LE GET_TEXT
         # --------------------------------------------------------------------
+        # DÉBUT du bloc pour supprimer <p> contenant des mots-clés,
+        # UNIQUEMENT SI l'utilisateur a coché "Oui"
+        if supprimer_balises:
+            mots_cles = ["Edito", "AUTRE", "Opinions", "La chronique", "Le point de vue", "ANTICIPATION", "Tech",
+                         "Une-ECO", "spécial ia france", "Le figaro santé", "Débats", "Portrait", "Enquête",
+                         "Chronique Etranger", "repères","Société", "La vie des entreprises", "Rencontre",
+                         "L'HISTOIRE", "Éthique", "SANTÉ PUBLIQUE", "Idées/", "Billet", "Economie & Entreprise", "Cinéma",
+                         "Question du jour", "Médecine", "Internet", "Reportage", "International", "ÉVÉNEMENT",
+                         "Le Figaro et vous", "Religion"] # dictionnaire à compléter en respectant la casse
+            for p_tag in article.find_all("p"):
+                texte_p = p_tag.get_text(strip=True)
+                if any(mot in texte_p for mot in mots_cles):
+                    p_tag.decompose()
+
+
+
         for element in article.find_all(["head", "aside", "footer", "img", "a"]):
             element.decompose()
         # eventuellement, d'autres classes à supprimer
@@ -185,7 +208,7 @@ def extraire_texte_html(
             element.decompose()
         for element in article.find_all("p", class_="sm-margin-bottomNews"):
             element.decompose()
-        # DÉBUT du bloc pour supprimer les <i> et <em>, <p>
+        # DÉBUT du bloc pour supprimer les <i> et <em>
         for i_tag in article.find_all("i"):
             i_tag.unwrap()
         for em_tag in article.find_all("em"):
@@ -207,7 +230,7 @@ def extraire_texte_html(
             texte_article = re.sub(re.escape(nom_journal), '', texte_article)
 
         if raw_date_str:
-            # On supprime "11 septembre 2024" (ou autre)
+            # On supprime "31 décembre 2024" (ou autre)
             texte_article = re.sub(re.escape(raw_date_str), '', texte_article)
 
         if date_texte:
@@ -283,26 +306,25 @@ def extraire_texte_html(
 
 # Interface Streamlit
 def afficher_interface_europresse():
-    # 1) Inséretion du code GA (GA_CODE) au tout début
-    GA_CODE = """
-        <!-- Google Analytics -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXX"></script>
-        <script>
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-438652717');
-        </script>
-        """
-    components.html(GA_CODE, height=0, width=0)
 
-    st.title("Traitement des fichiers Europresse")
+    # Grand titre
+    st.markdown(
+        "<h1 style='text-align: center; font-size: 44px; margin-bottom: 0px; color: #FF5733;'>Europresse to IRaMuTeQ</h1>",
+        unsafe_allow_html=True
+    )
+
+    # Sous-titre en plus petit (h3)
+    st.markdown(
+        "<h3 style='text-align: center; font-size: 34'px;'>Traitement des fichiers Europresse 😊</h3>",
+        unsafe_allow_html=True
+    )
+
     # Ligne de séparation
     st.markdown("---")
     st.markdown("""
-        Cette application (no code!) vous permet de convertir facilement des fichiers HTML issus du site Europresse en 
+        Cette application (no code !) vous permet de convertir facilement des fichiers HTML issus du site Europresse en 
         fichiers texte (.txt et .csv), prêts à être analysés avec le logiciel IRAMUTEQ.
-        Le script effectue un nettoyage du corpus et formate la première ligne de chaque article selon les exigences du
+        Le script (version 3.0) effectue un nettoyage du corpus et formate la première ligne de chaque article selon les exigences du
         logiciel.
 
         **** *source_nomdujournal *date_2023-12-22 *am_2023-12 *annee_2023
@@ -336,14 +358,21 @@ def afficher_interface_europresse():
         # --- Explication des méthodes d'extraction (Markdown)
         st.markdown("""
             ### Explication des méthodes d'extraction :
-            - **Méthode normale** : Extraction du nom du journal depuis la balise `div` sans aucun traitement - (On touche à rien et on exporte!).
-            - **Méthode clean** : Extraction du nom du journal avec un traitement - (conseillée) -  permet de raccourcir le nom du journal.
+            - **Méthode normale** : Extraction du nom du journal depuis la balise `div` sans aucun traitement - (On touche à rien et on exporte ! ).
+            - **Méthode clean (conseillée)** : Extraction du nom du journal avec un traitement permettant de raccourcir le nom du journal.
             """)
 
         methode_extraction = st.radio(
             "Méthode d'extraction du nom du journal",
             (0, 1),
-            format_func=lambda x: "Classique" if x == 0 else "Méthode clean"
+            format_func=lambda x: "Méthode normale" if x == 0 else "Méthode clean"
+        )
+
+        # **NOUVEAU** : bouton radio pour supprimer (ou non) les balises <p> contenant "Edito", "Autre", ...
+        supprimer_balises_radio = st.radio(
+            "Supprimer les balises contenant 'Edito', 'AUTRE',...(Expérimental ! à vos risques et périls !!!)",
+            ("Non", "Oui"),
+            index=0
         )
 
         if st.button("Lancer le traitement"):
@@ -360,7 +389,8 @@ def afficher_interface_europresse():
                 date_annee_mois_jour_checked,
                 date_annee_mois_checked,
                 date_annee_checked,
-                methode_extraction
+                methode_extraction,
+                supprimer_balises = (supprimer_balises_radio == "Oui")
             )
 
             # 3) Créer un fichier CSV en mémoire
@@ -393,6 +423,20 @@ def afficher_interface_europresse():
                 mime="application/zip"
             )
 
+# Injection du script GA après le contenu
+    GA_CODE = """
+        <div style="display: none;">
+            <!-- Google Analytics -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-438652717"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-438652717');
+            </script>
+        </div>
+    """
+    st.markdown(GA_CODE, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     afficher_interface_europresse()
