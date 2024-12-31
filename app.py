@@ -1,35 +1,53 @@
-# pip install streamlit beautifulsoup4 pandas lxml html5lib Babel
+# pip install streamlit beautifulsoup4 pandas lxml html5lib
 
 import os
 import re
 import html
 import csv
-from datetime import datetime
 from bs4 import BeautifulSoup
 import streamlit as st
 from io import StringIO, BytesIO
 import zipfile
-import locale # Définir la locale pour interpréter les dates en français
 import streamlit.components.v1 as components
 
-from babel.dates import format_datetime
-from datetime import datetime
+
+# -----------------------------------------
+    # 1) DICTIONNAIRE POUR LES DATES 
+# -----------------------------------------
+
+# 1) Dictionnaire
+mois_fr_en = {
+    'janvier': 'January', 'février': 'February', 'mars': 'March',
+    'avril': 'April', 'mai': 'May', 'juin': 'June',
+    'juillet': 'July', 'août': 'August', 'septembre': 'September',
+    'octobre': 'October', 'novembre': 'November', 'décembre': 'December'
+}
+
+# 2) Fonction paser la date
+def parser_date(raw_date_str):
+    """
+    Transforme "11 septembre 2024" en un objet datetime
+    (ex. datetime(2024, 9, 11)), en remplaçant le mois français si besoin.
+    """
+    import re
+    from datetime import datetime
+
+    # On parcourt les clés FR du dict pour détecter le mois dans "raw_date_str"
+    for fr, en in mois_fr_en.items():
+        # On vérifie en minuscules pour éviter les soucis de casse
+        if fr in raw_date_str.lower():
+            # Remplace "septembre" par "September" (ex.)
+            raw_date_str = re.sub(fr, en, raw_date_str, flags=re.IGNORECASE)
+            break  # on arrête après la première correspondance
+
+    try:
+        date_obj = datetime.strptime(raw_date_str, "%d %B %Y")
+        return date_obj
+    except ValueError:
+        return None  # si le parse échoue
 
 
-#try:
-    #locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-#except locale.Error:
-    #locale.setlocale(locale.LC_TIME, 'fr_FR')
 
-
-try:
-    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-except locale.Error:
-    # Fallback : on laisse la locale par défaut (souvent l’anglais)
-    pass
-
-#dt = datetime.now()
-#date_fr = format_datetime(dt, locale='fr_FR')  # "30 décembre 2024" etc.
 
 # Fonction pour nettoyer le nom du journal
 def nettoyer_nom_journal(nom_journal):
@@ -55,7 +73,7 @@ def extraire_texte_html(
 
     for article in articles:
         # --------------------------------------------------------------------
-        # 1) RÉCUPÉRATION DES INFORMATIONS (Journal + Date) - PREMIÈRE PARTIE
+        # 2) RÉCUPÉRATION DES INFORMATIONS (Journal + Date) - PREMIÈRE PARTIE
         # --------------------------------------------------------------------
         # a) Nom du journal (brut) via la balise .rdp__DocPublicationName
 
@@ -81,7 +99,7 @@ def extraire_texte_html(
         texte_article = article.get_text(" ", strip=True)
 
         # --------------------------------------------------------------------
-        # 2) RÉCUPÉRATION DU NOM DU JOURNAL (selon la méthode choisie) - SECONDE PARTIE
+        # 3) RÉCUPÉRATION DU NOM DU JOURNAL (selon la méthode choisie) - SECONDE PARTIE
         # --------------------------------------------------------------------
         # On retrouve (ou pas) à nouveau la div_journal
         # (Si elle a déjà été decompose(), elle sera None)
@@ -116,6 +134,7 @@ def extraire_texte_html(
         if div_journal:
             div_journal.decompose()
 
+
         # b) Date (brut) via la balise .DocHeader
         date_texte = ""
         raw_date_str = ""
@@ -126,11 +145,10 @@ def extraire_texte_html(
             match = re.search(r'\d{1,2} \w+ \d{4}', date_texte)
             if match:
                 raw_date_str = match.group()  # ex: "11 septembre 2024"
-            # On supprime la balise span_date du DOM
             span_date.decompose()
 
         # --------------------------------------------------------------------
-        # 2) FORMATTER CES INFORMATIONS EN VERSION "ÉTOILÉE"
+        # 4) FORMATTER CES INFORMATIONS EN VERSION "ÉTOILÉE"
         # --------------------------------------------------------------------
         #    ex: "*source_La_Croix *date_2024-09-11" ...
 
@@ -141,16 +159,14 @@ def extraire_texte_html(
         # Gestion de la date en format "année-mois-jour", "année-mois", "année"
         date_formattee = am_formattee = annee_formattee = ""
         if raw_date_str:
-            try:
-                date_obj = datetime.strptime(raw_date_str, "%d %B %Y")
-                date_formattee = date_obj.strftime('*date_%Y-%m-%d')   # ex: *date_2024-09-11
-                am_formattee   = date_obj.strftime('*am_%Y-%m')        # ex: *am_2024-09
-                annee_formattee= date_obj.strftime('*annee_%Y')        # ex: *annee_2024
-            except ValueError:
-                pass
+            date_obj = parser_date(raw_date_str)  # <-- on appelle la fonction
+            if date_obj:
+                date_formattee = date_obj.strftime('*date_%Y-%m-%d')  # ex: *date_2023-12-05
+                am_formattee = date_obj.strftime('*am_%Y-%m')  # ex: *am_2023-12
+                annee_formattee = date_obj.strftime('*annee_%Y')  # ex: *annee_2023
 
         # --------------------------------------------------------------------
-        # 3) TITRE : on le veut dans le corps final, donc on ne le supprime pas
+        # 5) TITRE : on le veut dans le corps final, donc on ne le supprime pas
         # --------------------------------------------------------------------
         titre_article = ""
         p_titre = article.find("p", class_="sm-margin-TopNews titreArticleVisu rdp__articletitle")
@@ -160,7 +176,7 @@ def extraire_texte_html(
             # Mais on pourrait stocker son texte si on veut le retravailler.
 
         # --------------------------------------------------------------------
-        # 4) NETTOYAGE DU DOM (aside, footer, etc.) AVANT LE GET_TEXT
+        # 6) NETTOYAGE DU DOM (aside, footer, etc.) AVANT LE GET_TEXT
         # --------------------------------------------------------------------
         for element in article.find_all(["head", "aside", "footer", "img", "a"]):
             element.decompose()
@@ -177,13 +193,13 @@ def extraire_texte_html(
 
 
         # --------------------------------------------------------------------
-        # 5) EXTRAIRE LE TEXTE FINAL
+        # 7) EXTRAIRE LE TEXTE FINAL
         # --------------------------------------------------------------------
         texte_article = article.get_text("\n", strip=True)
         # Le "\n" dans get_text() permet d’éviter que tout soit sur une seule ligne.
 
         # --------------------------------------------------------------------
-        # 6) SUPPRIMER LE JOURNAL + DATE BRUTS DU TEXTE, tout en gardant le titre
+        # 8) SUPPRIMER LE JOURNAL + DATE BRUTS DU TEXTE, tout en gardant le titre
         #    (car le titre se trouve dans le DOM au même endroit)
         # --------------------------------------------------------------------
         if nom_journal:
@@ -200,7 +216,7 @@ def extraire_texte_html(
             texte_article = re.sub(re.escape(date_texte), '', texte_article)
 
         # --------------------------------------------------------------------
-        # 7) RETOUCHE FINALE : enlever les doublons de lignes vides, etc.
+        # 9) RETOUCHE FINALE : enlever les doublons de lignes vides,...
         # --------------------------------------------------------------------
         # Par exemple, si la première ligne s’est retrouvée vide après la suppression
         # On peut couper par lignes, nettoyer, recoller
@@ -225,7 +241,7 @@ def extraire_texte_html(
         texte_article = re.sub(r'\n+(?=«)', ' ', texte_article)
 
         # --------------------------------------------------------------------
-        # 8) CONSTRUIRE LA PREMIÈRE LIGNE (étoilée) + CORPS
+        # 10) CONSTRUIRE LA PREMIÈRE LIGNE (étoilée) + CORPS
         # --------------------------------------------------------------------
         #    (==> "**** *source_La_Croix *date_2024-09-11 *am_2024-09 *annee_2024 *variable_suppl...")
         info_debut = "****"
@@ -242,13 +258,13 @@ def extraire_texte_html(
         info_debut += "\n"  # Fin de la 1ère ligne
 
         # --------------------------------------------------------------------
-        # 9) ON AJOUTE LE TEXTE DE L’ARTICLE APRÈS
+        # 11) ON AJOUTE LE TEXTE DE L’ARTICLE APRÈS
         # --------------------------------------------------------------------
         texte_final_article = info_debut + texte_article + "\n\n"
         texte_final += texte_final_article
 
         # --------------------------------------------------------------------
-        # 10) ENREGISTRER FICHIER CSV
+        # 12) ENREGISTRER FICHIER CSV
         # --------------------------------------------------------------------
         data_for_csv.append({
             'Journal': nom_journal_formate,
@@ -260,6 +276,10 @@ def extraire_texte_html(
 
     return texte_final, data_for_csv
 
+
+# --------------------------------------------------------------------
+#   INTERFACE GRAPHIQUE STREAMLIT
+# --------------------------------------------------------------------
 
 # Interface Streamlit
 def afficher_interface_europresse():
@@ -376,4 +396,3 @@ def afficher_interface_europresse():
 
 if __name__ == "__main__":
     afficher_interface_europresse()
-
