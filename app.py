@@ -22,14 +22,14 @@ from datetime import datetime
     #locale.setlocale(locale.LC_TIME, 'fr_FR')
 
 
-#try:
-    #locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-#except locale.Error:
+try:
+    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+except locale.Error:
     # Fallback : on laisse la locale par défaut (souvent l’anglais)
-    #pass
+    pass
 
-dt = datetime.now()
-date_fr = format_datetime(dt, locale='fr_FR')  # "30 décembre 2024" etc.
+#dt = datetime.now()
+#date_fr = format_datetime(dt, locale='fr_FR')  # "30 décembre 2024" etc.
 
 # Fonction pour nettoyer le nom du journal
 def nettoyer_nom_journal(nom_journal):
