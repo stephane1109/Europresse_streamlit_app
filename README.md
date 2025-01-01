@@ -27,6 +27,6 @@ L'exploitation commerciale de ce projet est interdite sans autorisation.
 
 -----------------------------------------
 ### Utilisation
-1. Rendez-vous sur l'application [Europresse to IRAMUTEQ] (https://europresse-to-iramuteq.streamlit.app/)
+1. Rendez-vous sur l'application [Europresse to IRaMuTeQ] : https://europresse-to-iramuteq.streamlit.app/
 2. Glissez-déposez vos fichiers HTML pour les traiter.
 3. Téléchargez les résultats au format texte ou CSV.
