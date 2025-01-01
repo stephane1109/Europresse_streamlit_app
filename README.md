@@ -16,4 +16,11 @@ pip install streamlit beautifulsoup4 pandas lxml html5lib
 Usage
 Cette application est distribuée sous la licence GNU AGPL v3.  
 Toute réutilisation ou modification de ce projet doit respecter les termes de cette licence.  
-L'exploitation commerciale de ce projet est interdite sans autorisation. 
+L'exploitation commerciale de ce projet est interdite sans autorisation.
+
+### Fonctionnalités
+- Reconstruction des noms de journaux (version longue et abrégée).
+- Conversion des dates en plusieurs formats.
+- Nettoyage des balises inutiles, URL et noms d’auteurs désordonnés.
+- Export au format texte et CSV.
+
