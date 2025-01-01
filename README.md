@@ -25,3 +25,8 @@ L'exploitation commerciale de ce projet est interdite sans autorisation.
 - Nettoyage de multiples balises inutiles, URL et noms d’auteurs
 - Export au format texte et CSV.
 
+-----------------------------------------
+### Utilisation
+1. Rendez-vous sur l'application [Europresse to IRAMUTEQ] (https://europresse-to-iramuteq.streamlit.app/)
+2. Glissez-déposez vos fichiers HTML pour les traiter.
+3. Téléchargez les résultats au format texte ou CSV.
