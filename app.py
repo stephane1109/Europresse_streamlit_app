@@ -5,7 +5,7 @@
 # Site Web : https://www.codeandcortex.fr
 # LinkedIn : https://www.linkedin.com/in/st%C3%A9phane-meurisse-27339055/
 # Date : 31 Décembre 2024
-# Version : 3.0
+# Version : 3.0.2
 # Licence : Ce programme est un logiciel libre : vous pouvez le redistribuer selon les termes de la Licence Publique Générale GNU v3
 # -----------------------------------------
 
@@ -53,8 +53,6 @@ def parser_date(raw_date_str):
         return date_obj
     except ValueError:
         return None  # si le parse échoue
-
-
 
 
 # Fonction pour nettoyer le nom du journal
@@ -190,10 +188,14 @@ def extraire_texte_html(
         if supprimer_balises:
             mots_cles = ["Edito", "AUTRE", "Opinions", "La chronique", "Le point de vue", "ANTICIPATION", "Tech",
                          "Une-ECO", "spécial ia france", "Le figaro santé", "Débats", "Portrait", "Enquête",
-                         "Chronique Etranger", "repères","Société", "La vie des entreprises", "Rencontre",
+                         "Chronique Etranger", "repères", "Société", "La vie des entreprises", "Rencontre",
                          "L'HISTOIRE", "Éthique", "SANTÉ PUBLIQUE", "Idées/", "Billet", "Economie & Entreprise", "Cinéma",
                          "Question du jour", "Médecine", "Internet", "Reportage", "International", "ÉVÉNEMENT",
-                         "Le Figaro et vous", "Religion"] # dictionnaire à compléter en respectant la casse
+                         "Le Figaro et vous", "Religion", "Premiere Page", "_Faits divers", "40TOUTES", "RODEZ_CP",
+                         "France", "Politique", "Sciences et Santé", "_Politique", "Le fait du jour", "Actualité ; Société",
+                         "AFP", "CONTRE-POINT", "Une", "Économie", "u FRANCE", "Expresso ", "Images/", "Histoire littéraire",
+                         "France", "Le Monde des Livres", "Opinions", "critiques", "Télévision", "Interieur FigaroPlus",
+                         "Le Monde Science et médecine", "CANNEs/", "_Société"] # dictionnaire à compléter en respectant la casse
             for p_tag in article.find_all("p"):
                 texte_p = p_tag.get_text(strip=True)
                 if any(mot in texte_p for mot in mots_cles):
