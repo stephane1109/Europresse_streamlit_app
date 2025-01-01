@@ -22,6 +22,6 @@ L'exploitation commerciale de ce projet est interdite sans autorisation.
 ### Fonctionnalités
 - Reconstruction des noms de journaux (version longue et abrégée).
 - Conversion des dates en plusieurs formats.
-- Nettoyage des balises inutiles, URL et noms d’auteurs désordonnés.
+- Nettoyage de multiples balises inutiles, URL et noms d’auteurs
 - Export au format texte et CSV.
 
