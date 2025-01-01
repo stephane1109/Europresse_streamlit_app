@@ -10,7 +10,7 @@
 
 -----------------------------------------
 ### Librairies 
-pip install streamlit beautifulsoup4 pandas lxml html5lib
+- pip install streamlit beautifulsoup4 pandas lxml html5lib
 
 -----------------------------------------
 ### Licence
