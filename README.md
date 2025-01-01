@@ -7,17 +7,18 @@
 - Date : 31 Décembre 2024
 - Version : 3.0.2
 - Licence : Ce programme est un logiciel libre : vous pouvez le redistribuer selon les termes de la Licence Publique Générale GNU v3
------------------------------------------
 
+-----------------------------------------
 ### Librairies 
 pip install streamlit beautifulsoup4 pandas lxml html5lib
 
-
+-----------------------------------------
 ### Licence
 Cette application est distribuée sous la licence GNU AGPL v3.  
 Toute réutilisation ou modification de ce projet doit respecter les termes de cette licence.  
 L'exploitation commerciale de ce projet est interdite sans autorisation.
 
+-----------------------------------------
 ### Fonctionnalités
 - Reconstruction des noms de journaux (version longue et abrégée).
 - Conversion des dates en plusieurs formats.
