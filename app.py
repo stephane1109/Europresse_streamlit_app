@@ -5,11 +5,9 @@
 # Site Web : https://www.codeandcortex.fr
 # LinkedIn : https://www.linkedin.com/in/st%C3%A9phane-meurisse-27339055/
 # Date : 31 Décembre 2024
-# Version : 3.0.2
+# Version : 3.1.2
 # Licence : Ce programme est un logiciel libre : vous pouvez le redistribuer selon les termes de la Licence Publique Générale GNU v3
 # -----------------------------------------
-
-# pip install streamlit beautifulsoup4 pandas lxml html5lib
 
 import os
 import re
@@ -37,22 +35,27 @@ mois_fr_en = {
 
 # 2) Fonction paser la date
 def parser_date(raw_date_str):
-    # Transforme "31 decembre 2024" en un objet datetime
-    # (ex. datetime(2024, 12, 31)), en remplaçant le mois français.
-
-    # On parcourt les clés FR du dict pour détecter le mois dans "raw_date_str"
+    """
+    Transforme "31 décembre 2024" ou "June 13, 2024" en un objet datetime.
+    Remplace les mois français par anglais si nécessaire.
+    """
+    # Remplacement des mois français par anglais
     for fr, en in mois_fr_en.items():
-        # On vérifie en minuscules pour éviter les soucis de casse
         if fr in raw_date_str.lower():
-            # Remplace "septembre" par "September"
             raw_date_str = re.sub(fr, en, raw_date_str, flags=re.IGNORECASE)
-            break  # on arrête après la première correspondance
+            break  # Arrêter après la première correspondance
 
     try:
+        # Tenter de parser au format "13 June 2024"
         date_obj = datetime.strptime(raw_date_str, "%d %B %Y")
         return date_obj
     except ValueError:
-        return None  # si le parse échoue
+        try:
+            # Tenter de parser au format "June 13, 2024"
+            date_obj = datetime.strptime(raw_date_str, "%B %d, %Y")
+            return date_obj
+        except ValueError:
+            return None  # Si le parsing échoue
 
 
 # Fonction pour nettoyer le nom du journal
@@ -147,7 +150,9 @@ def extraire_texte_html(
         if span_date:
             date_texte = html.unescape(span_date.get_text())
             # On cherche une date dans le format "5 janvier 2024"
-            match = re.search(r'\d{1,2} \w+ \d{4}', date_texte)
+            # match = re.search(r'\d{1,2} \w+ \d{4}', date_texte)
+            # version fr et en
+            match = re.search(r'\d{1,2} \w+ \d{4}|\w+ \d{1,2}, \d{4}', date_texte)
             if match:
                 raw_date_str = match.group()  # ex: "11 septembre 2024"
             span_date.decompose()
@@ -183,10 +188,9 @@ def extraire_texte_html(
         # --------------------------------------------------------------------
         # 6) NETTOYAGE DU DOM (aside, footer, etc.) AVANT LE GET_TEXT
         # --------------------------------------------------------------------
-        # DÉBUT du bloc pour supprimer <p> contenant des mots-clés,
-        # UNIQUEMENT SI l'utilisateur a coché "Oui"
+
         if supprimer_balises:
-            mots_cles = ["Edito", "AUTRE", "Opinions", "La chronique", "Le point de vue", "ANTICIPATION", "Tech",
+            termes_a_supprimer = ["Edito", "AUTRE", "Opinions", "La chronique", "Le point de vue", "ANTICIPATION", "Tech",
                          "Une-ECO", "spécial ia france", "Le figaro santé", "Débats", "Portrait", "Enquête",
                          "Chronique Etranger", "repères", "Société", "La vie des entreprises", "Rencontre",
                          "L'HISTOIRE", "Éthique", "SANTÉ PUBLIQUE", "Idées/", "Billet", "Economie & Entreprise", "Cinéma",
@@ -195,13 +199,18 @@ def extraire_texte_html(
                          "France", "Politique", "Sciences et Santé", "_Politique", "Le fait du jour", "Actualité ; Société",
                          "AFP", "CONTRE-POINT", "Une", "Économie", "u FRANCE", "Expresso ", "Images/", "Histoire littéraire",
                          "France", "Le Monde des Livres", "Opinions", "critiques", "Télévision", "Interieur FigaroPlus",
-                         "Le Monde Science et médecine", "CANNEs/", "_Société"] # dictionnaire à compléter en respectant la casse
-            for p_tag in article.find_all("p"):
+                         "Le Monde Science et médecine", "CANNEs/", "_Société", "_Le Fait du jour", "IDÉES"]  # Liste des termes spécifiques à supprimer
+            for p_tag in article.find_all("p", class_="sm-margin-bottomNews"):
                 texte_p = p_tag.get_text(strip=True)
-                if any(mot in texte_p for mot in mots_cles):
+                if any(terme.lower() in texte_p.lower() for terme in termes_a_supprimer):
                     p_tag.decompose()
 
+            for div_tag in article.find_all("div"):
+                texte_div = div_tag.get_text(strip=True)
+                if any(terme.lower() == texte_div.lower() for terme in termes_a_supprimer):
+                    div_tag.decompose()
 
+        ######
 
         for element in article.find_all(["head", "aside", "footer", "img", "a"]):
             element.decompose()
@@ -215,6 +224,19 @@ def extraire_texte_html(
             i_tag.unwrap()
         for em_tag in article.find_all("em"):
             em_tag.unwrap()
+
+        # --------------------------------------------------------------------
+        # 7) SUPPRIMER LE CONTENU APRES LA DATE DANS 'titreArticle'
+        # --------------------------------------------------------------------
+        if supprimer_balises:
+            titre_article_div = article.find("div", class_="titreArticle")
+            if titre_article_div:
+                # Supprimer tous les <p> tags sauf celui avec la classe 'sm-margin-TopNews titreArticleVisu rdp__articletitle'
+                for p_tag in titre_article_div.find_all("p"):
+                    classes = p_tag.get("class", [])
+                    if not all(classe in classes for classe in
+                                ["sm-margin-TopNews", "titreArticleVisu", "rdp__articletitle"]):
+                        p_tag.decompose()
 
 
         # --------------------------------------------------------------------
@@ -442,3 +464,5 @@ def afficher_interface_europresse():
 
 if __name__ == "__main__":
     afficher_interface_europresse()
+
+
