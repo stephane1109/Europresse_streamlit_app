@@ -427,7 +427,7 @@ def afficher_interface_europresse():
             # 3) Créer un fichier CSV en mémoire
             csv_buffer = StringIO()
             writer = csv.DictWriter(csv_buffer,
-                                    fieldnames=['Journal', 'Date', 'Année-mois-jour', 'Année-mois', 'Année', 'Article'])
+                                    fieldnames=['Journal', 'Année-mois-jour', 'Année-mois', 'Année', 'Article'])
             writer.writeheader()
             for row in data_for_csv:
                 writer.writerow(row)
