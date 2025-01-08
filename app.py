@@ -355,7 +355,7 @@ def afficher_interface_europresse():
     st.markdown("""
         Cette application (no code !) vous permet de convertir facilement des fichiers HTML issus du site Europresse en 
         fichiers texte (.txt et .csv), prêts à être analysés avec le logiciel IRAMUTEQ.
-        Le script (version 3.0) effectue un nettoyage du corpus et formate la première ligne de chaque article selon les exigences du
+        Le script (version 3.1.3) effectue un nettoyage du corpus et formate la première ligne de chaque article selon les exigences du
         logiciel.
 
         **** *source_nomdujournal *date_2023-12-22 *am_2023-12 *annee_2023
