@@ -5,14 +5,20 @@
 # Site Web : https://www.codeandcortex.fr
 # LinkedIn : https://www.linkedin.com/in/st%C3%A9phane-meurisse-27339055/
 # Date : 31 Décembre 2024
-# Version : 3.1.2
+# Version : 3.1.3
 # Licence : Ce programme est un logiciel libre : vous pouvez le redistribuer selon les termes de la Licence Publique Générale GNU v3
 # -----------------------------------------
+
+#################################################version avec correction DOM avant la date
+
+# pip install streamlit beautifulsoup4 pandas lxml html5lib
+# openpyxl xlsxwriter
 
 import os
 import re
 import html
 import csv
+import pandas as pd
 from bs4 import BeautifulSoup
 import streamlit as st
 from io import StringIO, BytesIO
@@ -35,10 +41,10 @@ mois_fr_en = {
 
 # 2) Fonction paser la date
 def parser_date(raw_date_str):
-    """
-    Transforme "31 décembre 2024" ou "June 13, 2024" en un objet datetime.
-    Remplace les mois français par anglais si nécessaire.
-    """
+
+    # Transforme "31 décembre 2024" ou "June 13, 2024" en un objet datetime.
+    # Remplace les mois français par anglais si nécessaire.
+
     # Remplacement des mois français par anglais
     for fr, en in mois_fr_en.items():
         if fr in raw_date_str.lower():
@@ -186,9 +192,10 @@ def extraire_texte_html(
             # Mais on pourrait stocker son texte si on veut le retravailler.
 
         # --------------------------------------------------------------------
-        # 6) NETTOYAGE DU DOM (aside, footer, etc.) AVANT LE GET_TEXT
+        # 6) NETTOYAGE DU DOM (aside, footer,...)
         # --------------------------------------------------------------------
 
+        # Le dico
         if supprimer_balises:
             termes_a_supprimer = ["Edito", "AUTRE", "Opinions", "La chronique", "Le point de vue", "ANTICIPATION", "Tech",
                          "Une-ECO", "spécial ia france", "Le figaro santé", "Débats", "Portrait", "Enquête",
@@ -200,6 +207,7 @@ def extraire_texte_html(
                          "AFP", "CONTRE-POINT", "Une", "Économie", "u FRANCE", "Expresso ", "Images/", "Histoire littéraire",
                          "France", "Le Monde des Livres", "Opinions", "critiques", "Télévision", "Interieur FigaroPlus",
                          "Le Monde Science et médecine", "CANNEs/", "_Société", "_Le Fait du jour", "IDÉES"]  # Liste des termes spécifiques à supprimer
+
             for p_tag in article.find_all("p", class_="sm-margin-bottomNews"):
                 texte_p = p_tag.get_text(strip=True)
                 if any(terme.lower() in texte_p.lower() for terme in termes_a_supprimer):
@@ -210,7 +218,6 @@ def extraire_texte_html(
                 if any(terme.lower() == texte_div.lower() for terme in termes_a_supprimer):
                     div_tag.decompose()
 
-        ######
 
         for element in article.find_all(["head", "aside", "footer", "img", "a"]):
             element.decompose()
@@ -419,17 +426,26 @@ def afficher_interface_europresse():
 
             # 3) Créer un fichier CSV en mémoire
             csv_buffer = StringIO()
-            writer = csv.DictWriter(csv_buffer, fieldnames=['Journal', 'Date','Année-mois-jour','Année-mois','Année', 'Article'])
+            writer = csv.DictWriter(csv_buffer,
+                                    fieldnames=['Journal', 'Date', 'Année-mois-jour', 'Année-mois', 'Année', 'Article'])
             writer.writeheader()
             for row in data_for_csv:
                 writer.writerow(row)
 
-            # 4) Construire un ZIP contenant le .txt et le .csv
+            # *** Nouveau : Créer un fichier Excel (.xlsx) en mémoire ***
+            df = pd.DataFrame(data_for_csv)
+            excel_buffer = BytesIO()
+            with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer_xlsx:
+                df.to_excel(writer_xlsx, index=False)
+            excel_buffer.seek(0)  # Remet le curseur au début du buffer
+
+            # 4) Construire un ZIP contenant le .txt, le .csv et le .xlsx
             zip_buffer = BytesIO()
             with zipfile.ZipFile(zip_buffer, "w") as zf:
-                # Nommer les fichiers .txt et .csv comme le fichier HTML initial
+                # Nommer les fichiers .txt, .csv et .xlsx comme le fichier HTML initial
                 zf.writestr(f"{base_name}.txt", texte_final)
                 zf.writestr(f"{base_name}.csv", csv_buffer.getvalue())
+                zf.writestr(f"{base_name}.xlsx", excel_buffer.getvalue())
 
             # 5) Afficher un aperçu du texte final
             st.markdown("### Aperçu du corpus traité")
@@ -446,6 +462,7 @@ def afficher_interface_europresse():
                 file_name=f"{base_name}_outputs.zip",
                 mime="application/zip"
             )
+
 
 # Injection du script GA après le contenu
     GA_CODE = """
